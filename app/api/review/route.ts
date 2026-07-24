@@ -1,5 +1,5 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { buildSystemPrompt, buildUserPrompt, type ReviewResult } from '@/lib/prompts';
+import { runReview, activeProvider } from '@/lib/llm';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -35,21 +35,22 @@ function validateReviewResult(obj: unknown): ReviewResult {
 
 /** 내부 오류를 사용자 친화 메시지로 매핑 (#5). 원문은 서버 로그에만. */
 function userFacingError(err: unknown): { message: string; status: number } {
+  const raw = err instanceof Error ? err.message : String(err);
+  if (raw === 'NO_KEY')
+    return { message: '서버에 API 키가 설정되지 않았습니다 (관리자: ANTHROPIC_API_KEY 또는 OPENAI_API_KEY).', status: 503 };
   const status = (err as { status?: number })?.status;
   if (status === 401) return { message: 'API 키가 유효하지 않습니다. 설정을 확인하세요.', status: 502 };
   if (status === 429) return { message: '요청이 많습니다. 잠시 후 다시 시도하세요.', status: 429 };
   if (status === 404) return { message: '설정된 모델을 찾을 수 없습니다. PREREJECT_MODEL을 확인하세요.', status: 502 };
-  const raw = err instanceof Error ? err.message : String(err);
   if (raw === 'NO_JSON' || raw === 'BAD_SHAPE' || raw === 'TRUNCATED')
     return { message: '심사 결과를 읽지 못했습니다. 제출물을 조금 줄여 다시 시도해 주세요.', status: 502 };
   return { message: '심사 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.', status: 502 };
 }
 
 export async function POST(req: Request) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
+  if (!activeProvider()) {
     return Response.json(
-      { error: '서버에 API 키가 설정되지 않았습니다 (관리자: ANTHROPIC_API_KEY).' },
+      { error: '서버에 API 키가 설정되지 않았습니다 (관리자: ANTHROPIC_API_KEY 또는 OPENAI_API_KEY).' },
       { status: 503 },
     );
   }
@@ -74,26 +75,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const client = new Anthropic({ apiKey });
-  const model = process.env.PREREJECT_MODEL || 'claude-sonnet-5';
-
   try {
-    const msg = await client.messages.create({
-      model,
-      max_tokens: 8192, // thinking 토큰 + JSON 출력 헤드룸 (#2)
-      system: buildSystemPrompt(),
-      messages: [{ role: 'user', content: buildUserPrompt(submission, criteria) }],
-    });
-
-    if (msg.stop_reason === 'max_tokens') throw new Error('TRUNCATED'); // 응답 잘림 → 파싱 시도 대신 명확히 실패 (#2)
-
-    const text = msg.content
-      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-      .map((b) => b.text)
-      .join('\n');
-
+    const { text, model, provider } = await runReview(buildSystemPrompt(), buildUserPrompt(submission, criteria));
     const result = validateReviewResult(extractJson(text)); // (#3)
-    return Response.json({ result, model });
+    return Response.json({ result, model, provider });
   } catch (err) {
     console.error('[prereject] review 실패:', err); // 원문은 로그에만 (#5)
     const { message, status } = userFacingError(err);

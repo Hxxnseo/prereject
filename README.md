@@ -18,13 +18,17 @@
 
 ```bash
 npm install
-cp .env.example .env.local   # ANTHROPIC_API_KEY 입력
+cp .env.example .env.local   # ANTHROPIC_API_KEY 또는 OPENAI_API_KEY 중 하나
 npm run dev                  # http://localhost:3000
 ```
 
 ## 스택
 
-Next.js (App Router) · Anthropic Claude · TypeScript. 배포는 Vercel.
+Next.js (App Router) · TypeScript · 배포는 Vercel.
+
+LLM은 **Anthropic Claude 또는 OpenAI 중 있는 키를 자동 감지**해서 씁니다 (둘 다 있으면 Anthropic 우선).
+모델은 `PREREJECT_MODEL`로 덮어쓸 수 있고, 기본값은 Anthropic `claude-sonnet-5` / OpenAI `gpt-4o`.
+Node.js 20+ 권장.
 
 ## 로드맵
 
