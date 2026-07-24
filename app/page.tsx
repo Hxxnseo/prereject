@@ -79,13 +79,13 @@ export default function Home() {
 
           <div className="section-title">지금 당장 고칠 것</div>
           <ol className="fixes">
-            {result.topFixes.map((f, i) => (
+            {(result.topFixes ?? []).map((f, i) => (
               <li key={i}>{f}</li>
             ))}
           </ol>
 
           <div className="section-title">항목별 채점 (절대점수 · 경쟁 컷)</div>
-          {result.criteria.map((c, i) => (
+          {(result.criteria ?? []).map((c, i) => (
             <div className="crit" key={i}>
               <div className="row">
                 <span className="name">{c.name}</span>
@@ -98,9 +98,9 @@ export default function Home() {
             </div>
           ))}
 
-          <div className="section-title">탈락사유 헌터 ({result.rejections.length})</div>
-          {result.rejections.length === 0 && <div className="muted">치명 반려요인 없음.</div>}
-          {result.rejections.map((r, i) => (
+          <div className="section-title">탈락사유 헌터 ({(result.rejections ?? []).length})</div>
+          {(result.rejections ?? []).length === 0 && <div className="muted">치명 반려요인 없음.</div>}
+          {(result.rejections ?? []).map((r, i) => (
             <div className="rej" key={i}>
               <div className="head">
                 <span className="code">{r.code}</span>
