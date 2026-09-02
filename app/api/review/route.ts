@@ -1,11 +1,15 @@
 import { buildSystemPrompt, buildUserPrompt, type ReviewResult } from '@/lib/prompts';
 import { runReview, activeProvider } from '@/lib/llm';
+import { checkLimit, clientIp } from '@/lib/ratelimit';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+export const maxDuration = 120; // 실측 42~44초. 60초는 마진이 얇아 모델 부하 시 타임아웃 위험.
 
-/** 입력 상한 — 비용 폭탄/타임아웃 방어 (#1). 제출물+평가기준 합산 문자 수. */
-const MAX_INPUT_CHARS = 12000;
+/** 입력 상한 — 비용 폭탄/타임아웃 방어 (#1). 제출물+평가기준+구조 합산 문자 수.
+ *  🔴 12000 → 40000 (2026-09-02): 첨부파일을 받기 시작하면서 12000자로는 피치덱 한 벌도
+ *  안 들어간다. 클라이언트가 쪽 경계에서 먼저 자르지만(사용자에게 고지됨), 그건 우회 가능하므로
+ *  서버에도 하드 상한을 남긴다. 지연은 출력이 지배하므로 입력 증가분의 비용은 작다(실측). */
+const MAX_INPUT_CHARS = 40000;
 
 /** ```json 펜스 우선 → 일반 펜스 → 원문 순으로 balanced object 추출 (#4 보강) */
 function extractJson(raw: string): unknown {
@@ -48,6 +52,16 @@ function userFacingError(err: unknown): { message: string; status: number } {
 }
 
 export async function POST(req: Request) {
+  // 비용 상한이 먼저다 — 키 확인보다 앞에 둔다 (없는 키로도 요청은 계속 들어온다).
+  const limit = checkLimit(clientIp(req));
+  if (!limit.ok) {
+    const message =
+      limit.reason === 'ip'
+        ? '무료 심사는 시간당 3회까지입니다. 잠시 후 다시 시도해 주세요.'
+        : '오늘 무료 심사 한도가 찼습니다. 내일 다시 시도해 주세요.';
+    return Response.json({ error: message }, { status: 429, headers: { 'retry-after': String(limit.retryAfterSec) } });
+  }
+
   if (!activeProvider()) {
     return Response.json(
       { error: '서버에 API 키가 설정되지 않았습니다 (관리자: ANTHROPIC_API_KEY 또는 OPENAI_API_KEY).' },
@@ -57,10 +71,12 @@ export async function POST(req: Request) {
 
   let submission = '';
   let criteria = '';
+  let structure = '';
   try {
     const body = await req.json();
     submission = String(body?.submission ?? '');
     criteria = String(body?.criteria ?? '');
+    structure = String(body?.structure ?? '').slice(0, 4000); // 구조 표는 짧다. 길면 잘라 신뢰하지 않는다.
   } catch {
     return Response.json({ error: '요청 형식이 올바르지 않습니다.' }, { status: 400 });
   }
@@ -68,7 +84,7 @@ export async function POST(req: Request) {
   if (submission.trim().length < 20) {
     return Response.json({ error: '제출물이 너무 짧습니다 (20자 이상).' }, { status: 400 });
   }
-  if (submission.length + criteria.length > MAX_INPUT_CHARS) {
+  if (submission.length + criteria.length + structure.length > MAX_INPUT_CHARS) {
     return Response.json(
       { error: `입력이 너무 깁니다 (합산 ${MAX_INPUT_CHARS}자 이하). 핵심 부분만 넣어 주세요.` },
       { status: 413 },
@@ -76,7 +92,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { text, model, provider } = await runReview(buildSystemPrompt(), buildUserPrompt(submission, criteria));
+    const { text, model, provider } = await runReview(
+      buildSystemPrompt(),
+      buildUserPrompt(submission, criteria, structure),
+    );
     const result = validateReviewResult(extractJson(text)); // (#3)
     return Response.json({ result, model, provider });
   } catch (err) {

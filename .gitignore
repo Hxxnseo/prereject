@@ -1,8 +1,7 @@
-/node_modules
-/.next
-/out
-.env
+node_modules
+.next
 .env.local
-*.log
-.DS_Store
-next-env.d.ts
+.vercel
+public/pdf.worker.min.mjs
+*.tsbuildinfo
+public/rhwp_bg.wasm

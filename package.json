@@ -6,12 +6,20 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "copy:worker": "cp node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs public/pdf.worker.min.mjs && cp node_modules/@rhwp/core/rhwp_bg.wasm public/rhwp_bg.wasm",
+    "prebuild": "npm run copy:worker",
+    "predev": "npm run copy:worker"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.65.0",
+    "@rhwp/core": "^0.8.4",
+    "@vercel/analytics": "^2.0.1",
+    "cfb": "^1.2.2",
+    "jszip": "^3.10.1",
     "next": "^15.1.6",
     "openai": "^4.104.0",
+    "pdfjs-dist": "^6.3.289",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

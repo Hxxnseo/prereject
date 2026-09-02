@@ -42,7 +42,7 @@ export async function runReview(
 
   // openai — response_format json_object로 유효 JSON 강제 (system 프롬프트에 "JSON" 포함 필요, 이미 있음)
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-  const model = process.env.PREREJECT_MODEL || 'gpt-4o';
+  const model = process.env.PREREJECT_MODEL || 'gpt-5.6-sol';
   const res = await client.chat.completions.create({
     model,
     response_format: { type: 'json_object' },
