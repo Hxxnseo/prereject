@@ -92,7 +92,15 @@ button.go:disabled { opacity: 0.5; cursor: default; }
 .handoff:hover { background: var(--panel-2); }
 .handoff-head { font-weight: 800; font-size: 17px; letter-spacing: -0.01em; }
 .handoff p { color: var(--muted); font-size: 14px; margin: 8px 0 12px; }
-.handoff-go { color: var(--accent); font-weight: 700; font-size: 14px; }
+.handoff-acts { display: flex; flex-wrap: wrap; gap: 10px; }
+.handoff-go, .handoff-dm {
+  font-weight: 700; font-size: 14px; text-decoration: none;
+  border-radius: 10px; padding: 10px 14px; white-space: nowrap;
+}
+.handoff-go { color: var(--accent); border: 1px solid var(--accent); }
+.handoff-dm { color: var(--bg); background: var(--accent); }
+.handoff-go:hover { background: #1f1614; }
+.handoff-dm:hover { filter: brightness(1.08); }
 
 /* ── 첨부파일 드롭존 ── */
 .drop {
@@ -145,3 +153,17 @@ button.go:disabled { opacity: 0.5; cursor: default; }
   border: 1px solid var(--border); border-radius: 5px;
   padding: 1px 6px; white-space: nowrap;
 }
+
+/* 자동 진단으로 부족한 사람 — 사람이 읽는 유료 진단으로 넘기는 자리. */
+.deepdive {
+  margin-top: 22px; padding: 16px 18px; border-radius: 12px;
+  background: var(--panel); border: 1px solid var(--line);
+}
+.deepdive-head { font-weight: 800; font-size: 17px; letter-spacing: -0.01em; }
+.deepdive p { color: var(--muted); font-size: 14px; margin: 8px 0 12px; }
+.deepdive-go {
+  display: inline-block; padding: 9px 14px; border-radius: 9px;
+  font-size: 14px; font-weight: 700; text-decoration: none;
+  color: var(--accent); border: 1px solid var(--accent);
+}
+.deepdive-go:hover { background: #1f1614; }

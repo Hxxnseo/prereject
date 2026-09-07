@@ -245,21 +245,56 @@ export default function Home() {
         </div>
       )}
 
+      {/* 자동 진단이 못 보는 곳이 있다 — 사람이 읽는 쪽으로 넘기는 자리. */}
       {result && (
-        <a
-          className="handoff"
-          href="https://ai-thor-studio.vercel.app/build.html?from=prereject"
-          target="_blank"
-          rel="noopener"
-          onClick={() => track('prereject_handoff_click')}
-        >
+        <div className="deepdive">
+          <div className="deepdive-head">더 깊게 보려면</div>
+          <p>
+            이 화면은 자동으로 낸 결과입니다.
+            서류 전체와 공고문을 사람이 직접 대조해서
+            반려 사유와 고쳐 쓸 문구까지 정리하는 건 따로 합니다.
+          </p>
+          <a
+            className="deepdive-go"
+            href="https://kmong.com/@Aithor"
+            target="_blank"
+            rel="noopener"
+            onClick={() => track('prereject_deepdive_click')}
+          >
+            사람이 직접 보는 진단 &rsaquo;
+          </a>
+        </div>
+      )}
+
+      {result && (
+        <div className="handoff">
           <div className="handoff-head">심사는 여기까지 자동입니다</div>
           <p>
             지원사업이든 공모전이든 붙고 나면 결국 만들어야 합니다.
             웹툴·랜딩·MVP를 3~5일에 만듭니다.
           </p>
-          <span className="handoff-go">만든 것들 보기 &rsaquo;</span>
-        </a>
+          <div className="handoff-acts">
+            <a
+              className="handoff-go"
+              href="https://ai-thor-studio.vercel.app/build.html?from=prereject"
+              target="_blank"
+              rel="noopener"
+              onClick={() => track('prereject_handoff_click')}
+            >
+              만든 것들 보기 &rsaquo;
+            </a>
+            {/* 문의를 메일 클라이언트로 미루지 않는다 — 한 번 눌러 바로 대화창이 열리게. */}
+            <a
+              className="handoff-dm"
+              href="https://ig.me/m/hyunmakes"
+              target="_blank"
+              rel="noopener"
+              onClick={() => track('prereject_dm_click')}
+            >
+              바로 물어보기 (인스타 DM) &rsaquo;
+            </a>
+          </div>
+        </div>
       )}
 
       <div className="foot">
