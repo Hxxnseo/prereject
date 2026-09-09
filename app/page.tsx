@@ -276,7 +276,7 @@ export default function Home() {
           <div className="handoff-acts">
             <a
               className="handoff-go"
-              href="https://ai-thor-studio.vercel.app/build.html?from=prereject"
+              href="https://ai-thor-studio-web.vercel.app/build.html?from=prereject"
               target="_blank"
               rel="noopener"
               onClick={() => track('prereject_handoff_click')}
